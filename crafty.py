@@ -1,5 +1,8 @@
 import pygame 
 import random
+
+
+
 window_width, window_height = 1080, 720
 screen = pygame.display.set_mode((window_width, window_height))
 tileSize = 16 
@@ -21,6 +24,7 @@ blocktype='dirt'
 gravity = 0.1
 friction =0.7
 jmpForce = 3
+enmJmpForce = 4
 speed = 15
 
 Xvel,Yvel,grav = 0,0,0
@@ -71,6 +75,8 @@ class map():
                 else:
                         blocktype = ['air',(102,255,255)]
                 tiles[i].append([j*ts,i*ts,blocktype]) #structure : xCord, yCord, blockType
+            
+            
 #    def drawMap():
 #        for i in range(0, window_height // tileSize):
 #            for j in range(0, window_width // tileSize):
@@ -84,9 +90,10 @@ class map():
                 pygame.draw.rect(screen, tiles[i][j][2][1], pygame.Rect(tiles[i][j][0], tiles[i][j][1], tileSize, tileSize))
 
 class Mobs:
-    def __init__(self, x, y):
+    def __init__(self, x, y, xVe, Yve):
         self.posx = x
         self.posy = y
+        self.yVel = Yve
         self.width = 16
         self.height = 32
         self.on_ground = False  # Reset on_ground flag
@@ -96,7 +103,10 @@ class Mobs:
 
         self.posx += dx
         self.posy += dy
-        
+        if grav < 15:
+            self.yVel += gravity
+        if mob1.on_ground == True:
+            self.yVel = 1
         # Check for collisions with non-air blocks
 
         for i in range(len(tiles)):
@@ -117,13 +127,9 @@ class Mobs:
                         elif dy < 0:
                             self.posy = tiles[i][j][1] + tileSize
     def mobPathFind(self):
+
         posMob = [self.posx, self.posy]
         posPlayer = [player1.posx, player1.posy]
-        if posMob[0] < posPlayer[0]:
-            print("TO THE RIGHTTT")
-        elif posMob[0] > posPlayer[0]:
-            print("TO THE LEFFTTT")
-
         iY,iX,indexY,indexX=0,0,0,0
         while iY < posMob[1]:
             iY+=tileSize
@@ -133,16 +139,29 @@ class Mobs:
                 indexX+=1
         indexX -=1
         indexY -=1 
-        try:
+        if posMob[0] < posPlayer[0]:
+            print("TO THE RIGHTTT")
+            mob1.move(1, 0)
+            if self.on_ground:
+                if tiles[indexY+1][indexX+2][2][0] != 'air' or tiles[indexY+2][indexX+2][2][0] != 'air': # droite
+                    self.yVel = -enmJmpForce
+                    print("a droitttttetetete")
+                    self.on_ground = False
+        elif posMob[0] > posPlayer[0]:
+            print("TO THE LEFFTTT")
+            mob1.move(-1, 0)
+            if self.on_ground:
+                if tiles[indexY+1][indexX][2][0] != 'air' or tiles[indexY+2][indexX][2][0] != 'air': # droite
+                    self.yVel = -enmJmpForce
+                    print("a gaucheeeeeeeeeeeeee")
+                    self.on_ground = False
 
-            if tiles[indexY][indexX][2][0] == 'air':                    #spagueti gusto
-                if (tiles[indexY+1][indexX][2][0] != 'air' or 
-                    tiles[indexY][indexX+1][2][0] != 'air' or 
-                    tiles[indexY-1][indexX][2][0] != 'air' or 
-                    tiles[indexY][indexX-1][2][0] != 'air'):
-                        tiles[indexY][indexX][2] = sellected_block
-        except:
-            print("WHAT THE FUK BRO TF IS THAT ?!")
+
+
+
+
+
+
 
 
 
@@ -159,7 +178,7 @@ class Mobs:
 
 
 
-mob1 = Mobs(200, 100)
+mob1 = Mobs(200, 100,0,0)
 player1 = Player(100, 100)
 map.generateMap()
 map.updateMap()
@@ -225,7 +244,7 @@ while(running):
         player1.on_ground = False
     if keys[pygame.K_DOWN] and Yvel < speed:
         Yvel += 1
-        grav += 1
+   
 
     Xvel *= friction
 
@@ -233,14 +252,11 @@ while(running):
         Yvel += gravity  # Apply gravity when not on the ground
     if player1.on_ground == True:
         Yvel = 1
-    if grav < 15:
-        grav += gravity
-    if mob1.on_ground == True:
-        grav = 1
+
         #print(player1.on_ground)
     player1.move(0, Yvel)
     player1.move(Xvel, 0)
-    mob1.move(0, grav)
+    mob1.move(0, mob1.yVel)
     mob1.mobPathFind()
     map.updateMap()
     pygame.draw.rect(screen, (255,0,0), pygame.Rect(player1.posx, player1.posy, tileSize, tileSize*2))
