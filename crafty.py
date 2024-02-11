@@ -5,7 +5,7 @@ import random
 
 window_width, window_height = 1080, 720
 screen = pygame.display.set_mode((window_width, window_height))
-tileSize = 16 
+tileSize = 20
 tiles=[]
 #up to dattte
 
@@ -34,8 +34,8 @@ class Player:
     def __init__(self, x, y):
         self.posx = x
         self.posy = y
-        self.width = 16
-        self.height = 32
+        self.width = tileSize
+        self.height = tileSize*2
         self.on_ground = False  # Reset on_ground flag
           # Flag to indicate if the player is on the ground
 
@@ -94,8 +94,8 @@ class Mobs:
         self.posx = x
         self.posy = y
         self.yVel = Yve
-        self.width = 16
-        self.height = 32
+        self.width = tileSize
+        self.height = tileSize*2
         self.on_ground = False  # Reset on_ground flag
           # Flag to indicate if the player is on the ground
 
