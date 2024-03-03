@@ -1,12 +1,14 @@
 import pygame
 import math
+import mapper2D
+
 
 ######## DEBUG_MODE ################
 debug_mode = True   # USE RESSOURCES
 ######## DEBUG_MODE ################
 
-######## VARIABLES ########
 
+######## VARIABLES ########
 
 TYPE_TILE = 2
 
@@ -66,20 +68,24 @@ frameCount = 0
 class map():
     def generateMap(ww = WINDOW_WIDTH, wh = WINDOW_HEIGHT, ts = TILESIZE):
         a=8
+        heightMap = mapper2D.makeHeightMap(WINDOW_WIDTH*sizeMap,1,3,8,18,18)      
         nb = wh//ts
-        for i in range(0,sizeMap*nb):
+        for i in range(0,sizeMap*wh//ts):
             tileMap.append([])
             for j in range(0,sizeMap*ww//ts):
-                if i>nb-a:
-                    tileMap[i].append([j*ts,i*ts,BLOCKS[3]])
+                height_index = j % len(heightMap) 
+                height = heightMap[height_index]
+                if i >= nb - height:
+                    if tileMap[i-1][j][2] == BLOCKS[0]:
+                        tileMap[i].append([j*ts,i*ts,BLOCKS[2]])
+                    else:
+                        tileMap[i].append([j*ts,i*ts,BLOCKS[3]])
+
                 else:
                     tileMap[i].append([j*ts,i*ts,BLOCKS[0]])
-    
+            a+=1
+
     def initMap():
-        #tileMap[20][20][2] = BLOCKS[3]
-        tileMap[20][20][TYPE_TILE] = TYPE_TERRE
-
-
         screen.fill((0, 0, 0))
         for x in range(len(tileMap)):
             for y in range(len(tileMap[0])):
@@ -150,9 +156,6 @@ class Player:
         return False
 
     def update(self):
-
-        #player1.on_ground = False
-
         if self.Yvel < 15:
             self.Yvel += 3.0*gravity 
 
@@ -230,7 +233,6 @@ while(running):
         
         frameCount=0
 
-    #cam_pos = [0+200*math.cos(Count/100.0),0]
     cam_pos = [player1.posx-WINDOW_WIDTH//2,player1.posy-WINDOW_HEIGHT//1.5]
 
     screen.blit(background,(0,0),(cam_pos[0],cam_pos[1],2*WINDOW_WIDTH, WINDOW_HEIGHT))
@@ -240,5 +242,5 @@ while(running):
             pygame.draw.circle(screen, (255,0,0), (points), 1)
     screen.blit(fpsSurface,(0,0))
     pygame.display.flip()
-    clock.tick(500)
+    clock.tick(999)
 
