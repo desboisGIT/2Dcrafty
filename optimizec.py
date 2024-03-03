@@ -18,7 +18,7 @@ tileMap = []
 
 gravity = 0.1
 friction =0.9
-jmpForce = 3
+jmpForce = 5
 enmJmpForce = 4
 speed = 3
 
@@ -80,10 +80,10 @@ def fpsCounter():
 
 def isObstacle(x,y):
     isObstacle = False
-    if tileMap[y//TILESIZE][x//TILESIZE][2] != 'air':
+    if tileMap[int(y//TILESIZE)][int(x//TILESIZE)][2] != BLOCKS[0]:
         isObstacle = True
 
-    print("click : x,y = ",x,y,"   tiles[i,j] ",y//TILESIZE,x//TILESIZE )
+    #print("click : x,y = ",x,y,"   tiles[i,j] ",y//TILESIZE,x//TILESIZE,"   ", isObstacle)
 
     return isObstacle
 
@@ -95,15 +95,40 @@ class Player:
         self.Yvel = Yvel
         self.width = TILESIZE
         self.height = TILESIZE*2
-        self.on_ground = False 
+        self.on_ground = False
+        self.colle_au_sol = False
 
 
     def move(self, dx, dy):
+        new_x = self.posx + dx
+        new_y = self.posy + dy
 
-        self.posx += dx
-        self.posy += dy
 
+        if not self.check_collision(new_x, new_y):
+            self.posx = new_x
+            self.posy = new_y
+        else : ##### collision !!
+            self.Yvel = 0
+            self.on_ground = True
+            if not self.colle_au_sol :
+                self.posy -= (self.posy) % TILESIZE
+                self.colle_au_sol = True
 
+    def check_collision(self, x, y):
+
+        collidePointsList=[
+            [x+1,y+1],                                    # TOP LEFT
+            [x-1+TILESIZE,y+1],                           # TOP RIGHT
+            [x-1+TILESIZE,y+TILESIZE-1],                  # MIDDLE RIGHT
+            [x+1,y+TILESIZE-1],                           # MIDDLE LEFT
+            [x+1,y+TILESIZE*2-1],                         # BUTTOM LEFT
+            [x-1+TILESIZE,y+TILESIZE*2-1],                # BUTTOM RIGHT 
+        ]
+        for points in collidePointsList:
+            if isObstacle(points[0],points[1]):
+                return True
+        return False
+    """
         for i in range(len(tileMap)):
             for j in range(len(tileMap[0])):
                 if tileMap[i][j][2] != BLOCKS[0]:
@@ -120,11 +145,16 @@ class Player:
                             
                         elif dy < 0:
                             self.posy = tileMap[i][j][1] + TILESIZE
+    """
+
+
     def update(self):
+
+        #player1.on_ground = False
+
         if self.Yvel < 15:
-            self.Yvel += gravity 
-        if self.on_ground:
-            Yvel = 1
+            self.Yvel += 3.0*gravity 
+
         self.move(0, self.Yvel)
         self.move(self.Xvel, 0)
         pygame.draw.rect(entitySurface, (255, 0, 0), pygame.Rect(self.posx, self.posy, TILESIZE, TILESIZE * 2))
@@ -147,6 +177,8 @@ while(running):
             pos = pygame.mouse.get_pos()
             if event.button == 1:
                 isObstacle(pos[0],pos[1])
+                tileMap[pos[1]//TILESIZE][pos[0]//TILESIZE][2] = BLOCKS[3]
+                map.updateMap(pos[1]//TILESIZE,pos[0]//TILESIZE)
                 #print(isObstacle(pos[0],pos[1]), "   ", pos[0],"   ", pos[1])
     
     if keys[pygame.K_LEFT] and player1.Xvel > -speed:
@@ -155,7 +187,8 @@ while(running):
         player1.Xvel += 1
     if keys[pygame.K_UP] and player1.on_ground:
         player1.Yvel = -jmpForce
-        player1.on_ground = False
+        #player1.on_ground = False
+        player1.colle_au_sol = False
     if keys[pygame.K_DOWN] and player1.Yvel < speed:
         player1.Yvel += 1
     
@@ -174,6 +207,7 @@ while(running):
         player1.Xvel = round(Xvel*friction,2)
         if 0-abs(Xvel)<0.2:
             player1.Xvel=0
+        
         frameCount=0
 
 
@@ -183,7 +217,3 @@ while(running):
     pygame.display.flip()
     clock.tick(500)
 
-#   a faire:
-#   
-#  le system de rafraichisment local
-#
