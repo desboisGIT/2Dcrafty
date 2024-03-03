@@ -169,7 +169,7 @@ class Player:
 map.generateMap()
 map.initMap()
 
-player1 = Player(100,100)
+player1 = Player(1000,500)
 running = True
 
 while(running):
