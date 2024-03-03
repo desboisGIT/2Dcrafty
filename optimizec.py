@@ -1,10 +1,24 @@
 import pygame
-import random
+import math
 
+######## DEBUG_MODE ################
+debug_mode = True   # USE RESSOURCES
+######## DEBUG_MODE ################
 
 ######## VARIABLES ########
 
-WINDOW_WIDTH, WINDOW_HEIGHT = 1080, 720
+
+TYPE_TILE = 2
+
+TYPE_RIEN = 0
+TYPE_TERRE = 1
+TYPE_GRASS = 2
+TYPE_DIRT = 3
+
+WINDOW_WIDTH, WINDOW_HEIGHT = 1200, 1000
+
+
+cam_pos = [0,0]
 
 BLOCKS=[
     (102,255,255),  #AIR
@@ -21,13 +35,15 @@ friction =0.9
 jmpForce = 5
 enmJmpForce = 4
 speed = 3
+sizeMap =10
+Count = 0.0
 
 Xvel,Yvel,grav = 0,0,0
 
 ######## /VARIABLES\ ########
 
 ######## INIT ########
-background = pygame.Surface((WINDOW_WIDTH, WINDOW_HEIGHT))
+background = pygame.Surface((WINDOW_WIDTH*sizeMap, WINDOW_HEIGHT*sizeMap))
 entitySurface = pygame.Surface((TILESIZE, TILESIZE*2))
 fpsSurface = pygame.Surface((120, 60))
 screen = pygame.display.set_mode((WINDOW_WIDTH, WINDOW_HEIGHT))
@@ -51,15 +67,19 @@ class map():
     def generateMap(ww = WINDOW_WIDTH, wh = WINDOW_HEIGHT, ts = TILESIZE):
         a=8
         nb = wh//ts
-        for i in range(0,wh//ts):
+        for i in range(0,sizeMap*nb):
             tileMap.append([])
-            for j in range(0,ww//ts):
+            for j in range(0,sizeMap*ww//ts):
                 if i>nb-a:
                     tileMap[i].append([j*ts,i*ts,BLOCKS[3]])
                 else:
                     tileMap[i].append([j*ts,i*ts,BLOCKS[0]])
     
     def initMap():
+        #tileMap[20][20][2] = BLOCKS[3]
+        tileMap[20][20][TYPE_TILE] = TYPE_TERRE
+
+
         screen.fill((0, 0, 0))
         for x in range(len(tileMap)):
             for y in range(len(tileMap[0])):
@@ -67,7 +87,7 @@ class map():
                          
     def updateMap(x,y): 
         try:
-            pygame.draw.rect(background, random.randint(0,255), pygame.Rect(tileMap[x][y][0], tileMap[x][y][1], TILESIZE, TILESIZE))
+            pygame.draw.rect(background, tileMap[x][y][2], pygame.Rect(tileMap[x][y][0], tileMap[x][y][1], TILESIZE, TILESIZE))
         except:
             pass
 
@@ -83,8 +103,6 @@ def isObstacle(x,y):
     if tileMap[int(y//TILESIZE)][int(x//TILESIZE)][2] != BLOCKS[0]:
         isObstacle = True
 
-    #print("click : x,y = ",x,y,"   tiles[i,j] ",y//TILESIZE,x//TILESIZE,"   ", isObstacle)
-
     return isObstacle
 
 class Player:
@@ -97,6 +115,7 @@ class Player:
         self.height = TILESIZE*2
         self.on_ground = False
         self.colle_au_sol = False
+        self.collidePointsList=[]
 
 
     def move(self, dx, dy):
@@ -116,7 +135,7 @@ class Player:
 
     def check_collision(self, x, y):
 
-        collidePointsList=[
+        self.collidePointsList=[
             [x+1,y+1],                                    # TOP LEFT
             [x-1+TILESIZE,y+1],                           # TOP RIGHT
             [x-1+TILESIZE,y+TILESIZE-1],                  # MIDDLE RIGHT
@@ -124,29 +143,11 @@ class Player:
             [x+1,y+TILESIZE*2-1],                         # BUTTOM LEFT
             [x-1+TILESIZE,y+TILESIZE*2-1],                # BUTTOM RIGHT 
         ]
-        for points in collidePointsList:
+        for points in self.collidePointsList:
+            pygame.draw.circle(screen, (255,0,0), (points), 1)
             if isObstacle(points[0],points[1]):
                 return True
         return False
-    """
-        for i in range(len(tileMap)):
-            for j in range(len(tileMap[0])):
-                if tileMap[i][j][2] != BLOCKS[0]:
-                    block_rect = pygame.Rect(tileMap[i][j][0], tileMap[i][j][1], TILESIZE, TILESIZE)
-                    player_rect = pygame.Rect(self.posx, self.posy, self.width, self.height)
-                    if block_rect.colliderect(player_rect):
-                        if dx > 0:
-                            self.posx = tileMap[i][j][0] - self.width
-                        elif dx < 0:
-                            self.posx = tileMap[i][j][0] + TILESIZE
-                        if dy > 0:
-                            self.posy = tileMap[i][j][1] - self.height
-                            self.on_ground = True
-                            
-                        elif dy < 0:
-                            self.posy = tileMap[i][j][1] + TILESIZE
-    """
-
 
     def update(self):
 
@@ -175,33 +176,52 @@ while(running):
             exit()
         if event.type == pygame.MOUSEBUTTONDOWN:
             pos = pygame.mouse.get_pos()
+            mouseClick = list(pos)
+            print(pos,mouseClick)
+            mouseClick[0] += cam_pos[0]
+            mouseClick[1] += cam_pos[1]
             if event.button == 1:
-                isObstacle(pos[0],pos[1])
-                tileMap[pos[1]//TILESIZE][pos[0]//TILESIZE][2] = BLOCKS[3]
-                map.updateMap(pos[1]//TILESIZE,pos[0]//TILESIZE)
-                #print(isObstacle(pos[0],pos[1]), "   ", pos[0],"   ", pos[1])
-    
+                isObstacle(mouseClick[0],mouseClick[1])
+                tileMap[round(mouseClick[1]//TILESIZE)][mouseClick[0]//TILESIZE][2] = BLOCKS[3]
+                map.updateMap(round(mouseClick[1]//TILESIZE),mouseClick[0]//TILESIZE)
+                if debug_mode:
+                    print(isObstacle(mouseClick[0],mouseClick[1]), "   ", mouseClick[0],"   ", mouseClick[1])
+            if event.button == 3:
+                isObstacle(mouseClick[0],mouseClick[1])
+                tileMap[round(mouseClick[1]//TILESIZE)][mouseClick[0]//TILESIZE][2] = BLOCKS[0]
+                map.updateMap(round(mouseClick[1]//TILESIZE),mouseClick[0]//TILESIZE)
+                if debug_mode:
+                    print(isObstacle(mouseClick[0],mouseClick[1]), "   ", mouseClick[0],"   ", mouseClick[1])
+        if event.type == pygame.KEYUP:
+            if event.key == pygame.K_k:
+                debug_mode = not debug_mode
+                print("debug mode: ",debug_mode)
+
     if keys[pygame.K_LEFT] and player1.Xvel > -speed:
         player1.Xvel += -1
     if keys[pygame.K_RIGHT] and player1.Xvel < speed:
         player1.Xvel += 1
     if keys[pygame.K_UP] and player1.on_ground:
         player1.Yvel = -jmpForce
-        #player1.on_ground = False
+        player1.on_ground = False
         player1.colle_au_sol = False
     if keys[pygame.K_DOWN] and player1.Yvel < speed:
         player1.Yvel += 1
     
 
+    
+
     player1.update()
 
-
-    # FPS Counter
-    fps_counter += 1
     frameCount += 1
-    if fps_counter == fps_update_frequency:
-        fpsCounter()
-        fps_counter = 0
+
+    Count += 1.0
+
+    if debug_mode:     # FPS Counter
+        fps_counter += 1
+        if fps_counter == fps_update_frequency:
+            fpsCounter()
+            fps_counter = 0
 
     if frameCount == 10:
         player1.Xvel = round(Xvel*friction,2)
@@ -210,9 +230,14 @@ while(running):
         
         frameCount=0
 
+    #cam_pos = [0+200*math.cos(Count/100.0),0]
+    cam_pos = [player1.posx-WINDOW_WIDTH//2,player1.posy-WINDOW_HEIGHT//1.5]
 
-    screen.blit(background,(0,0))
-    screen.blit(entitySurface,(player1.posx,player1.posy))
+    screen.blit(background,(0,0),(cam_pos[0],cam_pos[1],2*WINDOW_WIDTH, WINDOW_HEIGHT))
+    screen.blit(entitySurface,(player1.posx-cam_pos[0],player1.posy-cam_pos[1]))
+    if debug_mode: 
+        for points in player1.collidePointsList:
+            pygame.draw.circle(screen, (255,0,0), (points), 1)
     screen.blit(fpsSurface,(0,0))
     pygame.display.flip()
     clock.tick(500)
