@@ -27,7 +27,9 @@ Xvel,Yvel,grav = 0,0,0
 ######## /VARIABLES\ ########
 
 ######## INIT ########
-
+background = pygame.Surface((WINDOW_WIDTH, WINDOW_HEIGHT))
+entitySurface = pygame.Surface((TILESIZE, TILESIZE*2))
+fpsSurface = pygame.Surface((120, 60))
 screen = pygame.display.set_mode((WINDOW_WIDTH, WINDOW_HEIGHT))
 clock = pygame.time.Clock() 
 pygame.init()
@@ -37,7 +39,8 @@ pygame.init()
 
 fps_font = pygame.font.SysFont(None, 24)
 fps_counter = 0
-fps_update_frequency = 20
+fps_update_frequency = 100
+frameCount = 0
 
 ######## /INIT\ ########
 
@@ -60,18 +63,29 @@ class map():
         screen.fill((0, 0, 0))
         for x in range(len(tileMap)):
             for y in range(len(tileMap[0])):
-                pygame.draw.rect(screen, tileMap[x][y][2], pygame.Rect(tileMap[x][y][0], tileMap[x][y][1], TILESIZE, TILESIZE))
+                pygame.draw.rect(background, tileMap[x][y][2], pygame.Rect(tileMap[x][y][0], tileMap[x][y][1], TILESIZE, TILESIZE))
                          
     def updateMap(x,y): 
         try:
-            pygame.draw.rect(screen, random.randint(0,255), pygame.Rect(tileMap[x][y][0], tileMap[x][y][1], TILESIZE, TILESIZE))
+            pygame.draw.rect(background, random.randint(0,255), pygame.Rect(tileMap[x][y][0], tileMap[x][y][1], TILESIZE, TILESIZE))
         except:
             pass
+
+
 def fpsCounter():
     fps = clock.get_fps()
     fps_text = fps_font.render(f'FPS: {fps:.2f}', True, (255, 255, 255))
-    pygame.draw.rect(screen, (0,0,0), pygame.Rect(0, 0, TILESIZE*6, TILESIZE*2))
-    screen.blit(fps_text, (10, 10))
+    pygame.draw.rect(fpsSurface, (0,0,0), pygame.Rect(0, 0, TILESIZE*6, TILESIZE*2))
+    fpsSurface.blit(fps_text, (10, 10))
+
+def isObstacle(x,y):
+    isObstacle = False
+    if tileMap[y//TILESIZE][x//TILESIZE][2] != 'air':
+        isObstacle = True
+
+    print("click : x,y = ",x,y,"   tiles[i,j] ",y//TILESIZE,x//TILESIZE )
+
+    return isObstacle
 
 class Player:
     def __init__(self, x, y, Xvel=0, Yvel=0):
@@ -113,10 +127,7 @@ class Player:
             Yvel = 1
         self.move(0, self.Yvel)
         self.move(self.Xvel, 0)
-        for i in range(-3, 3):
-            for j in range(-3, 5):
-                map.updateMap((self.posy // TILESIZE) + i, (self.posx // TILESIZE) + j)
-        pygame.draw.rect(screen, (255, 0, 0), pygame.Rect(self.posx, self.posy, TILESIZE, TILESIZE * 2))
+        pygame.draw.rect(entitySurface, (255, 0, 0), pygame.Rect(self.posx, self.posy, TILESIZE, TILESIZE * 2))
 
                        
 ######## /CLASS & FUNCTIONS\ ######## 
@@ -132,7 +143,12 @@ while(running):
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             exit()
-        
+        if event.type == pygame.MOUSEBUTTONDOWN:
+            pos = pygame.mouse.get_pos()
+            if event.button == 1:
+                isObstacle(pos[0],pos[1])
+                #print(isObstacle(pos[0],pos[1]), "   ", pos[0],"   ", pos[1])
+    
     if keys[pygame.K_LEFT] and player1.Xvel > -speed:
         player1.Xvel += -1
     if keys[pygame.K_RIGHT] and player1.Xvel < speed:
@@ -149,18 +165,23 @@ while(running):
 
     # FPS Counter
     fps_counter += 1
+    frameCount += 1
     if fps_counter == fps_update_frequency:
         fpsCounter()
         fps_counter = 0
-    if fps_counter == 10:
+
+    if frameCount == 10:
         player1.Xvel = round(Xvel*friction,2)
         if 0-abs(Xvel)<0.2:
             player1.Xvel=0
+        frameCount=0
 
 
-
+    screen.blit(background,(0,0))
+    screen.blit(entitySurface,(player1.posx,player1.posy))
+    screen.blit(fpsSurface,(0,0))
     pygame.display.flip()
-    clock.tick(200)
+    clock.tick(500)
 
 #   a faire:
 #   
