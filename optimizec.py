@@ -1,7 +1,7 @@
 import pygame
 import math
 import mapper2D
-
+import random
 
 ######## DEBUG_MODE ################
 debug_mode = True   # USE RESSOURCES
@@ -27,6 +27,9 @@ BLOCKS=[
     (60,60,60),     #STONE
     (0,200,0),      #GRASS
     (80,40,0),      #DIRT
+    (107, 55, 17),  #WOOD
+    (70,255,70),     #leafs
+    (0, 153, 0)     #oaks leafs
 ]
 
 TILESIZE = 20
@@ -66,6 +69,7 @@ frameCount = 0
 ######## CLASS & FUNCTIONS ######## 
 
 class map():
+    @staticmethod
     def generateMap(ww = WINDOW_WIDTH, wh = WINDOW_HEIGHT, ts = TILESIZE):
         a=8
         heightMap = mapper2D.makeHeightMap(WINDOW_WIDTH*sizeMap,1,3,8,18,18)      
@@ -84,18 +88,71 @@ class map():
                 else:
                     tileMap[i].append([j*ts,i*ts,BLOCKS[0]])
             a+=1
-
+    @staticmethod
     def initMap():
         screen.fill((0, 0, 0))
         for x in range(len(tileMap)):
             for y in range(len(tileMap[0])):
                 pygame.draw.rect(background, tileMap[x][y][2], pygame.Rect(tileMap[x][y][0], tileMap[x][y][1], TILESIZE, TILESIZE))
-                         
+    @staticmethod               
     def updateMap(x,y): 
-        try:
-            pygame.draw.rect(background, tileMap[x][y][2], pygame.Rect(tileMap[x][y][0], tileMap[x][y][1], TILESIZE, TILESIZE))
-        except:
-            pass
+        pygame.draw.rect(background, tileMap[x][y][2], pygame.Rect(tileMap[x][y][0], tileMap[x][y][1], TILESIZE, TILESIZE))
+    
+    def generateNature(frequency):
+        index = 0
+
+        while index < len(tileMap[0]) - frequency - 1:
+            index += random.randint(3, frequency)
+            y = 0
+            while tileMap[y + 1][index][TYPE_TILE] == BLOCKS[0]:
+                y += 1
+            for i in range(random.randint(5, 8)):
+                tileMap[y - i][index][TYPE_TILE] = BLOCKS[4]  # Wood blocks
+                a=i
+            
+            treePatern = random.randint(0,2)
+            if treePatern == 0:
+                tileMap[y-a-1][index][TYPE_TILE] = BLOCKS[5]
+                tileMap[y-a-2][index][TYPE_TILE] = BLOCKS[5]
+                tileMap[y-a-1][index-1][TYPE_TILE] = BLOCKS[5]
+                tileMap[y-a-2][index-1][TYPE_TILE] = BLOCKS[5]
+                tileMap[y-a-2][index-2][TYPE_TILE] = BLOCKS[5]
+                tileMap[y-a-1][index+1][TYPE_TILE] = BLOCKS[5]
+                tileMap[y-a-2][index+1][TYPE_TILE] = BLOCKS[5]
+                tileMap[y-a-2][index+2][TYPE_TILE] = BLOCKS[5]
+
+                tileMap[y-a-4][index][TYPE_TILE] = BLOCKS[5]
+                tileMap[y-a-3][index][TYPE_TILE] = BLOCKS[5]
+                tileMap[y-a-4][index-1][TYPE_TILE] = BLOCKS[5]
+                tileMap[y-a-3][index-1][TYPE_TILE] = BLOCKS[5]
+                tileMap[y-a-4][index+1][TYPE_TILE] = BLOCKS[5]
+                tileMap[y-a-3][index-2][TYPE_TILE] = BLOCKS[5]
+                tileMap[y-a-3][index+2][TYPE_TILE] = BLOCKS[5]
+                tileMap[y-a-3][index+1][TYPE_TILE] = BLOCKS[5]
+            elif treePatern == 1:
+                tileMap[y - a - 1][index][TYPE_TILE] = BLOCKS[6]
+                tileMap[y - a - 1][index - 1][TYPE_TILE] = BLOCKS[6]
+                tileMap[y - a - 1][index + 1][TYPE_TILE] = BLOCKS[6]
+                tileMap[y - a - 2][index][TYPE_TILE] = BLOCKS[6]
+                tileMap[y - a - 2][index - 1][TYPE_TILE] = BLOCKS[6]
+                tileMap[y - a - 2][index + 1][TYPE_TILE] = BLOCKS[6]
+                tileMap[y - a - 3][index][TYPE_TILE] = BLOCKS[6]
+                tileMap[y - a - 3][index - 1][TYPE_TILE] = BLOCKS[6]
+                tileMap[y - a - 3][index + 1][TYPE_TILE] = BLOCKS[6]
+                tileMap[y - a - 4][index][TYPE_TILE] = BLOCKS[6]
+                tileMap[y - a - 4][index - 1][TYPE_TILE] = BLOCKS[6]
+                tileMap[y - a - 4][index + 1][TYPE_TILE] = BLOCKS[6]
+                tileMap[y - a - 5][index][TYPE_TILE] = BLOCKS[6]
+                tileMap[y - a - 5][index - 1][TYPE_TILE] = BLOCKS[6]
+                tileMap[y - a - 5][index + 1][TYPE_TILE] = BLOCKS[6]
+            elif treePatern == 2:
+                for j in range(3):
+                    tileMap[y - a - j - 1][index][TYPE_TILE] = (70, 255, 70)  # Pine color
+                    tileMap[y - a - j - 1][index - 1][TYPE_TILE] = (70, 255, 70)  # Pine color
+                    tileMap[y - a - j - 1][index + 1][TYPE_TILE] = (70, 255, 70)  # Pine color
+                    tileMap[y - a - j - 2][index][TYPE_TILE] = (70, 255, 70)  # Pine color
+                tileMap[y - a - 4][index][TYPE_TILE] = (70, 255, 70)  # Pine color
+
 
 
 def fpsCounter():
@@ -105,11 +162,13 @@ def fpsCounter():
     fpsSurface.blit(fps_text, (10, 10))
 
 def isObstacle(x,y):
-    isObstacle = False
-    if tileMap[int(y//TILESIZE)][int(x//TILESIZE)][2] != BLOCKS[0]:
-        isObstacle = True
-
-    return isObstacle
+    try:
+        isObstacle = False
+        if tileMap[int(y//TILESIZE)][int(x//TILESIZE)][2] != BLOCKS[0]:
+            isObstacle = True
+        return isObstacle
+    except:
+        return True
 
 class Player:
     def __init__(self, x, y, Xvel=0, Yvel=0):
@@ -163,14 +222,55 @@ class Player:
         self.move(self.Xvel, 0)
         pygame.draw.rect(entitySurface, (255, 0, 0), pygame.Rect(self.posx, self.posy, TILESIZE, TILESIZE * 2))
 
+
+
                        
 ######## /CLASS & FUNCTIONS\ ######## 
 
-map.generateMap()
-map.initMap()
+
 
 player1 = Player(1000,500)
 running = True
+loadingScreen = True
+menuscreen = True
+
+
+start_button_rect = pygame.Rect(WINDOW_WIDTH//2-100, WINDOW_HEIGHT//2-50, 200, 100)
+start_button_color = (0, 255, 0)
+
+while menuscreen:
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            pygame.quit()
+            exit()
+        if event.type == pygame.MOUSEBUTTONDOWN:
+            if event.button == 1:
+
+                if start_button_rect.collidepoint(event.pos):
+                    menuscreen = False
+    screen.fill((0, 0, 0))
+    pygame.draw.rect(screen, start_button_color, start_button_rect)
+    start_font = pygame.font.SysFont(None, 36)
+    start_text = start_font.render("Start", True, (0, 0, 0))
+    text_rect = start_text.get_rect(center=start_button_rect.center)
+    screen.blit(start_text, text_rect)
+    pygame.display.flip()
+
+while loadingScreen:
+    loading_text = fps_font.render("Generating map...", True, (255, 255, 255))
+    screen.fill((0, 0, 0))
+    screen.blit(loading_text, (WINDOW_WIDTH // 2 - 100, WINDOW_HEIGHT // 2))
+    pygame.display.flip()
+    map.generateMap()
+    loading_text = fps_font.render("Generating nature...", True, (255, 255, 255))
+    map.generateNature(17)
+    screen.fill((0, 0, 0))
+    screen.blit(loading_text, (WINDOW_WIDTH // 2 - 100, WINDOW_HEIGHT // 2))
+    pygame.display.flip()
+    loadingScreen = False
+  
+
+map.initMap()
 
 while(running):
     keys = pygame.key.get_pressed()
@@ -233,13 +333,16 @@ while(running):
         
         frameCount=0
 
-    cam_pos = [player1.posx-WINDOW_WIDTH//2,player1.posy-WINDOW_HEIGHT//1.5]
+    
+    #cam_pos = [player1.posx-WINDOW_WIDTH//2,player1.posy-WINDOW_HEIGHT//1.5]
+    cam_pos[0] = max(0, min(player1.posx - WINDOW_WIDTH // 2, sizeMap * WINDOW_WIDTH - WINDOW_WIDTH))
+    cam_pos[1] = max(0, min(player1.posy - WINDOW_HEIGHT // 1.5, sizeMap * WINDOW_HEIGHT - WINDOW_HEIGHT))
 
     screen.blit(background,(0,0),(cam_pos[0],cam_pos[1],2*WINDOW_WIDTH, WINDOW_HEIGHT))
     screen.blit(entitySurface,(player1.posx-cam_pos[0],player1.posy-cam_pos[1]))
     if debug_mode: 
         for points in player1.collidePointsList:
-            pygame.draw.circle(screen, (255,0,0), (points), 1)
+            pygame.draw.circle(screen, (255,0,0), (points[0]-cam_pos[0],points[1]-cam_pos[1]), 1)
     screen.blit(fpsSurface,(0,0))
     pygame.display.flip()
     clock.tick(999)
