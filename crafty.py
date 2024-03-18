@@ -1,7 +1,10 @@
 import pygame
-import math
-import mapper2D
 import random
+try:
+    import mapper2D
+except ImportError:
+    print("Failed to import mapper2D. Please check your installation, to install mapper2D, use 'git clone https://github.com/desboisGIT/2Dcrafty.git'")
+
 
 ######## DEBUG_MODE ################
 debug_mode = True   # USE RESSOURCES
@@ -181,7 +184,7 @@ class Player:
         self.on_ground = False
         self.colle_au_sol = False
         self.collidePointsList=[]
-
+        self.onGroundpoint = []
 
     def move(self, dx, dy):
         new_x = self.posx + dx
@@ -193,7 +196,6 @@ class Player:
             self.posy = new_y
         else : ##### collision !!
             self.Yvel = 0
-            self.on_ground = True
             if not self.colle_au_sol :
                 self.posy -= (self.posy) % TILESIZE
                 self.colle_au_sol = True
@@ -208,8 +210,14 @@ class Player:
             [x+1,y+TILESIZE*2-1],                         # BUTTOM LEFT
             [x-1+TILESIZE,y+TILESIZE*2-1],                # BUTTOM RIGHT 
         ]
+        self.onGroundpoint = [x+TILESIZE//2,y+TILESIZE*2+1]                # BUTTOM midle
+
+        if isObstacle(self.onGroundpoint[0],self.onGroundpoint[1]):
+            self.on_ground = True
+        else:
+            self.on_ground = False
+
         for points in self.collidePointsList:
-            pygame.draw.circle(screen, (255,0,0), (points), 1)
             if isObstacle(points[0],points[1]):
                 return True
         return False
@@ -220,7 +228,6 @@ class Player:
 
         self.move(0, self.Yvel)
         self.move(self.Xvel, 0)
-        pygame.draw.rect(entitySurface, (255, 0, 0), pygame.Rect(self.posx, self.posy, TILESIZE, TILESIZE * 2))
 
 
 
@@ -305,9 +312,10 @@ while(running):
     if keys[pygame.K_RIGHT] and player1.Xvel < speed:
         player1.Xvel += 1
     if keys[pygame.K_UP] and player1.on_ground:
-        player1.Yvel = -jmpForce
-        player1.on_ground = False
-        player1.colle_au_sol = False
+        if player1.on_ground:
+            player1.Yvel = -jmpForce
+            player1.on_ground = False
+            player1.colle_au_sol = False
     if keys[pygame.K_DOWN] and player1.Yvel < speed:
         player1.Yvel += 1
     
@@ -343,6 +351,7 @@ while(running):
     if debug_mode: 
         for points in player1.collidePointsList:
             pygame.draw.circle(screen, (255,0,0), (points[0]-cam_pos[0],points[1]-cam_pos[1]), 1)
+        pygame.draw.circle(screen, (255,0,0), (player1.onGroundpoint[0]-cam_pos[0],player1.onGroundpoint[1]-cam_pos[1]), 1)
     screen.blit(fpsSurface,(0,0))
     pygame.display.flip()
     clock.tick(999)
